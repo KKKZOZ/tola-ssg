@@ -27,7 +27,14 @@ runs:
         target: ${{ inputs.target }}
         cache: false
     - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      id: cache
       if: ${{ inputs.cache-key != '' }}
       with:
         shared-key: ${{ inputs.cache-key }}
         cache-on-failure: ${{ inputs.cache-on-failure }}
+    # uucore's build script reruns when Cargo.lock is newer than its last run, and checkout
+    # stamps Cargo.lock with the current time, so every restore rebuilt uucore and the nushell
+    # crates above it. An exact hit was built from this same Cargo.lock, so backdate it.
+    - if: ${{ steps.cache.outputs.cache-hit == 'true' }}
+      shell: bash
+      run: touch -t 200001010000 Cargo.lock
